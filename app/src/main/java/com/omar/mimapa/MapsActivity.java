@@ -52,7 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     Boolean actualPosition = true;
     JSONObject jsonObject;
-    Double longitudOrigen, latitudOrigen;
+    String longitudOrigen, latitudOrigen,longitudDestino, latitudDestino;
+    boolean Flag=false;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
 
@@ -69,7 +70,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        Punto coordenadas =getIntent().getExtras().getParcelable("coordenadas");
         createLocationRequest();
+        longitudDestino=coordenadas.getLongitudFinal();
+        latitudDestino=coordenadas.getLatitudFinal();
+
+            if(coordenadas.getLatitudInicial().equals("-1.0") && coordenadas.getLongitudInicial().equals("-1.0")){
+                Flag=false;
+
+            }else{
+                Flag=true;
+                longitudOrigen=coordenadas.getLongitudInicial();
+                latitudOrigen=coordenadas.getLatitudInicial();
+            }
 
         // Verifica permisos en tiempo de ejecución.
         if (checkAndRequestPermissions()) {
@@ -156,9 +169,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mMap.setMyLocationEnabled(true);
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         fusedLocationProviderClient.getLastLocation().addOnSuccessListener(
@@ -167,34 +178,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onSuccess(Location location) {
                         if (location != null) {
-                            latitudOrigen = location.getLatitude();
-                            longitudOrigen = location.getLongitude();
+                            if(!Flag) {
+                                latitudOrigen = String.valueOf(location.getLatitude());
+                                longitudOrigen =String.valueOf(location.getLongitude());
+                            }
                             actualPosition = false;
 
-                            LatLng ubicacion = new LatLng(latitudOrigen, longitudOrigen);
+                            LatLng ubicacion = new LatLng(
+                                    Double.parseDouble(latitudOrigen),Double.parseDouble(longitudOrigen));
 
                             mMap.addMarker(new MarkerOptions()
                                     .position(ubicacion)
                                     .title("Origen")
                                     .snippet("Origen"));
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ubicacion,13));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ubicacion,15));
 
                             CameraPosition cameraPosition = new CameraPosition.Builder()
                                     .target(ubicacion)
-                                    .zoom(14)
+                                    .zoom(15)
                                     .build();
 
                             mMap.animateCamera(
                                     CameraUpdateFactory.newCameraPosition(cameraPosition)
                             );
+
                             String url =
                                     "https://maps.googleapis.com/maps/api/directions/json?origin=" +
                                             latitudOrigen + "," + longitudOrigen +
-                                            "&destination=20.1394083,-101.1507207" +
-                                            "&key=AIzaSyDKJF9YMufcDOtQaTYNBR-UdTLEbt3rB3M";
+                                            "&destination="+latitudDestino+","+longitudDestino+"" +
+                                            "&key=AIzaSyDZx8ah9aVIZ57h7k1-V2DnivCSKNkLtXA";
 
                             RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
-                            StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+                            StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                                    new Response.Listener<String>() {
                                 @Override
                                 public void onResponse(String response) {
                                     try {
